@@ -1,0 +1,57 @@
+---
+title: "Distributed Algorithms for Sparse Matrix-Vector Multiplication"
+author: "Eric Hare"
+date: "April 28, 2015"
+output: ioslides_presentation
+---
+
+## Outline
+
+## Introduction
+
+## Statistics Background
+In matrix/vector notation, we can define a typical linear model in statistics as:
+
+$Y = X\beta + \epsilon$
+
+Where:
+
+- Y is an $n \times 1$ response vector
+- X is an $n \times k$ design matrix
+- $\beta$ is a $k \times 1$ parameter vector
+- $\epsilon$ is an $n \times 1$ error vector (that is, $\epsilon \sim MVN(0, \Sigma)$)
+
+## A Simple Example
+Suppose we have the data given in the following table:
+```{r, echo=FALSE, results='asis'}
+library(ggplot2)
+library(xtable)
+
+print(xtable(mpg[1:5,c("cty", "hwy")], digits = 0), comment = FALSE, type = "html")
+```
+
+We wish to use the highway mpg to predict the city mpg.
+
+## A Simple Example (Continued)
+Then we have:
+
+$Y = \begin{bmatrix}
+        18 & 21 & 20 & 21 & 16
+     \end{bmatrix}^{T}$
+     
+$X = \begin{bmatrix}
+        1 & 29 \\
+        1 & 29 \\
+        1 & 31 \\
+        1 & 30 \\
+        1 & 26
+     \end{bmatrix}$
+     
+$\beta = \begin{bmatrix}
+        \beta_0 \\
+        \beta_1
+     \end{bmatrix}$
+     
+$\epsilon = \begin{bmatrix}
+        \epsilon_1 & \epsilon_2 & \epsilon_3 & \epsilon_4 & \epsilon_5
+     \end{bmatrix}^{T}$
