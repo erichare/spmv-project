@@ -137,7 +137,19 @@ Minimizing the function $F$ amounts to minimizing the maximum number of non-zero
 
 One further optimization discussed is the idea of row-splitting. If a matrix is highly skewed as well as highly sparse (that is, the non-zero elements tend to occur in blocks rather than in an even distribution throughout the matrix), significant gains can be realized by splitting the row and assigning each split to a different processor. Note that this incurs some additional overhead as a new set of indices must be kept track of. Because of this overhead, the authors recommend that this only be done in the most extreme cases of sparsity and skewness.
 
+The full pseudo-code of the algorithm is reproduced in Figure \ref{fig:alg1}.
+
+\begin{figure}[H]
+
+\includegraphics[width=\linewidth]{images/alg1.png}
+
+\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\label{fig:alg1}
+\end{figure}
+
 ### Results
+The performance improvements were evaluated using four different matrices of slightly different characteristics, and performing the simulation on an Intel Paragon supercomputer. Figure \ref{fig:im1} gives a table describing the different properties of the test matrices. Note the sparsity value is given as the proportion of non-zero elements. Hence, all of the matrices test are quite sparse, containing at most 5.55 non-zero elements.
+
 \begin{figure}[H]
 
 \includegraphics[width=\linewidth]{images/im1.png}
@@ -145,6 +157,15 @@ One further optimization discussed is the idea of row-splitting. If a matrix is 
 \caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
 \label{fig:im1}
 \end{figure}
+
+Four different algorithms were compared. The four algorithms are:
+
+1. **Block** - In this allocation, no attempt at any load balancing is done. Each processor is given a contiguous block of rows for processing. In the paper, this is called the unbalanced case. Although it is balanced in terms of number of rows, it is unbalanced in terms of workload given any sort of sparsity or uneven distribution of non-zero elements.
+2. **Cyclic** - Each row i is allocated to processor i mod P, where P is the number of processors. This is considered by the authors to be an example of naive load balancing, because it rests on the assumption that the distribution of non-zero elements maintains a continuous pattern throughout the matrix.
+3. **Aliaga** - An iterative load balancing algorithm that generates swaps of matrix rows among processors to gradually smooth the maxima and minima of load. This algorithm has a time complexity that depends on the distribution of the data.
+4. **Gala** - The algorithm presented in this paper.
+
+The speedup as a function of the number of processors is presented in Figure \ref{fig:im2}. The top left box corresponds to the first matrix tested. Note that all but the block algorithm perform well in handling a sparse unsymmetric matrix, assuming that the distribution is not too skewed. The unsymmetric mostly block diagonal matrix has the best speedup as a function of the number of processors for both the Gala and the Aliaga algorithms, likely due to its relative density compared to the other three. The best results for the Gala algorithm come in the scenario of the fourth matrix, in which the Aliaga algorithm asymptotes at about a 12x speedup regardless of whether 20 or 40 processors are used. The Gala algorithm, meanwhile, has about a 22x speedup at 40 processors. This illustrates the success of the algorithm in handling skewness in the data distribution.
 
 \begin{figure}[H]
 
@@ -154,7 +175,39 @@ One further optimization discussed is the idea of row-splitting. If a matrix is 
 \label{fig:im2}
 \end{figure}
 
-## Second Paper
+## Architecture Aware Technique
+
+### Overview of Algorithm
+The next paper I explored was An architecture-aware technique for optimizing sparse
+matrix-vector multiplication on GPUs by Maggioni and Berger-Wolf. In this paper, a novel heuristic for reducing the number of cache accesses within hardware level thread blocks is given. They also present an improved variation of a sparse matrix data structure.
+
+To understand the improvements, its important to note the fundamental improvements brought to the issue by the architecture of modern GPUs. A GPU is composed of several Streaming Multiprocessors (SMs), each one containing CUDA cores. In the Nvidia GTX 580, for example, there are a total of 512 cores, allowing for an optimal 512 operations per clock cycle. Each of these cores is connected to a random access memory through a cache hierarchy with two levels. Taking into account the number of threads that can theoretically be ran by a single core, GPUs offer the potential for a massive speedup through significant parallelism. But, for many of the reasons previously mentioned, these gains are not often realized when performing linear algebra tasks involving sparse matrices.
+
+The first optimization discussed is a compression format for sparse matrices. In ELL compression, an nxm matrix is stored in an nxk data structure, where k is the maximum number of non-zero entries in any particular row. There is a separate nxk data structure storing the column index of the particular non-zero entry. Figure \ref{fig:img3} illustrates an example of using sliced ELL compression to store a sparse matrix. Sliced ELL compression is similar to regular ELL compression, except that the matrix is partitioned into different slices where there is a local value of k for each slice. This has the effect of reducing the amount of zero-padding needed in order to align the nonzero entries in the matrix.
+
+\begin{figure}[H]
+
+\includegraphics[width=\linewidth]{images/im3.png}
+
+\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\label{fig:im3}
+\end{figure}
+
+The key optimization discussed in this paper surrounds improving the performance of the cache by reducing cache misses and minimizing the number of transactions that must take place. The **CACHE TRANSACTION MINIMIZATION PROBLEM** is defined formually in the paper. Given the following:
+
+- A warp consisting of w threads (or rows)
+- A list of cache line mappings $C_i$, for each thread $t_i$, corresponding to k memory elements
+- A wxk scheduling table S where each row i can be any permutation of the $C_i$.
+
+The object is to minimize $z(S) = \sum_{j=0}^{k-1}|\cap_{i=0}^{w-1} S_{i,j}|$. In other words, the goal is to minimize the sum of cache line intersections in the scheduling table S (as these are redundant transactions). In Figure \ref{fig:im4}
+
+\begin{figure}[H]
+
+\includegraphics[width=\linewidth]{images/im4.png}
+
+\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\label{fig:im4}
+\end{figure}
 
 ## Third Paper
 
