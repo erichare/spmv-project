@@ -12,14 +12,17 @@ output: ioslides_presentation
 ## Statistics Background
 In matrix/vector notation, we can define a typical linear model in statistics as:
 
-$Y = X\beta + \epsilon$
+$y = X\beta + \epsilon$
 
 Where:
 
-- Y is an $n \times 1$ response vector
+- y is an $n \times 1$ response vector
 - X is an $n \times k$ design matrix
 - $\beta$ is a $k \times 1$ parameter vector
 - $\epsilon$ is an $n \times 1$ error vector (that is, $\epsilon \sim MVN(0, \Sigma)$)
+
+## Least Squares Estimator
+The "Least Squares Estimator" of the parameter vector $\beta$ is given by $b = (X^TX)^{-1}X^Ty$
 
 ## A Simple Example
 Suppose we have the data given in the following table:
@@ -35,7 +38,7 @@ We wish to use the highway mpg to predict the city mpg.
 ## A Simple Example (Continued)
 Then we have:
 
-$Y = \begin{bmatrix}
+$y = \begin{bmatrix}
         18 & 21 & 20 & 21 & 16
      \end{bmatrix}^{T}$
      
@@ -55,3 +58,120 @@ $\beta = \begin{bmatrix}
 $\epsilon = \begin{bmatrix}
         \epsilon_1 & \epsilon_2 & \epsilon_3 & \epsilon_4 & \epsilon_5
      \end{bmatrix}^{T}$
+     
+## A Simple Example (Continued)
+$(X^TX)^{-1} = \begin{bmatrix}
+        60.2714 & -2.0714 \\
+        -2.0714 & 0.0714 \\
+     \end{bmatrix}$
+     
+$X^Ty = \begin{bmatrix}
+        96 \\
+        2797 \\
+     \end{bmatrix}$
+     
+$b = (X^TX)^{-1}X^Ty = \begin{bmatrix}
+        -7.7286 \\
+        0.9286 \\
+     \end{bmatrix}$
+     
+Hence, the equation for the line of best fit is given by $y = -7.7286 + 0.9286x$.
+
+## SpMV Calculations
+Note one of the key operations here is multiplying $X^T$ by $y$. In this example, it was almost trivial, but in general, the matrix $X$ can be very large and sparse. 
+
+In particular, there is a column in $X$ for every parameter in the parameter vector.
+
+## R Simulation
+```{r, eval=FALSE}
+wearables <- read.csv("data/Example_WearableComputing_weight_lifting_exercises_biceps_curl_variations.csv")
+X <- apply(wearables[,-1], 2, as.numeric)
+y <- as.numeric(wearables[,1])
+
+biggerX <- do.call("rbind", replicate(50, X, simplify = FALSE))
+biggery <- rep(y, times = 50)
+
+t(X) %*% y
+t(biggerX) %*% biggery
+```
+
+## Limitations of the R (and naive) implementation
+- No explicit parallelism (only thread level) by default
+- Even if it was explicitly parallel, no load balancing or processor communication
+- Choice of multi-core or multi-machine parallelism
+- Poor cache locality
+
+## Load Balanced Sparse Matrix-Multiplication
+Nastea, Frieder, and El Ghazawi (1997) published one of the earliest proposed solutions to this issue.
+
+## LBSM-M Overview
+- $Y_i = AX_i$ where A is the sparse matrix, and $X_i$ is a sequence of dense vectors
+- The size of the sequence of $X_i$ vectors is very large and not a priori known
+- The resulting $Y_i$ vectors are generated and transmitted on an individual basis
+
+## Load Balancing 
+Greedy allocation for sparse pattern matrices:
+
+$F = max_i\{\sum_{j=1}^M(nZ_{i_j})\}$
+
+$i = 1, 2, ..., P$ represents the processors.
+
+$i_j = \{i_1, i_2, ..., i_M\}$ represents indices of rows assigned to processor i
+
+$nZ_{i_j}$ is the number of non-zero elements in these rows.
+
+The goal is to minimize the function F, which is minimizing the **largest bucket size that yields the highest computing time**.
+
+## Highly Skewed Data
+In a matrix that is both highly skewed and highly sparse, splitting rows that have a significantly larger number of non-zero elements is necessary. This incurs a slight overhead and hence is only recommended for more extreme cases.
+
+## Experimental Results
+Synthetically generated data:
+
+$f(i) = \frac{C}{i^{1 - \theta}} \text{ for } i = \{1, 2, ..., N\}$
+
+$C = \frac{1}{\sum_{i=1}^N\frac{1}{i^{1 - \theta}}}$
+
+$\theta \in [0, 1]$
+
+This is a discrete distribution called the **Zipf Distribution**
+
+## Experimental Results (Continued)
+<img src="images/im1.png" width="800px">
+
+## Experimental Results (Continued)
+<img src="images/im2.png" width="800px" height="500px">
+
+## Conclusion
+
+## Second Paper
+An architecture-aware technique for optimizing sparse matrix-vector multiplication on GPUs by Maggioni and Berger-Wolf
+
+## Sparse Matrix Compression
+<img src="images/im3.png" width="800px">
+
+## Cache Heuristic
+
+## Cache Heuristic (Continued)
+
+## Results
+
+## Results (Continued)
+
+## Conclusion
+
+## Third Paper
+
+## The BRC (Blocked Row-Column) Format
+
+## Model Parameters
+
+## Results
+
+## Results (Continued)
+
+## Multiple GPUs
+
+## Caveat: Pre-Processing Overhead
+
+## Conclusion
