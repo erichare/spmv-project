@@ -6,8 +6,10 @@ output: ioslides_presentation
 ---
 
 ## Outline
-
-## Introduction
+- Statistics Background
+- Load Balanced Sparse Matrix-Multiplication
+- Architecture-aware Technique
+- Scalable Parallel Matrix Multiplication
 
 ## Statistics Background
 In matrix/vector notation, we can define a typical linear model in statistics as:
@@ -120,7 +122,18 @@ $i_j = \{i_1, i_2, ..., i_M\}$ represents indices of rows assigned to processor 
 
 $nZ_{i_j}$ is the number of non-zero elements in these rows.
 
-The goal is to minimize the function F, which is minimizing the **largest bucket size that yields the highest computing time**.
+The goal is to minimize the function F, which is minimizing the **largest bucket size that yields the highest computing time**. Call this procedure GALA.
+
+## Overview of Algorithm
+<img src="images/alggg.png" width="800px">
+
+## Communication
+The broadcast operation can be quite expensive. 
+
+Hypercube and mesh topologies yield broadcast complexities of $O(log(P))$ and $O(\sqrt{P})$ respectively.
+
+On the other hand, software pipelining enables a communications complexity of $O(1 + P/Q)$ per each vector, where P is the
+number of processing elements and Q is the number of vectors. Note what happens when $Q >> P$...
 
 ## Highly Skewed Data
 In a matrix that is both highly skewed and highly sparse, splitting rows that have a significantly larger number of non-zero elements is necessary. This incurs a slight overhead and hence is only recommended for more extreme cases.
@@ -182,18 +195,31 @@ Oddly, the speedup doesn't seem too significant. The authors note in their paper
 
 ## Conclusion
 
-## Third Paper
+## Scalable Parallel Matrix Multiplication on Distributed Memory Parallel Computers
 
-## The BRC (Blocked Row-Column) Format
+## Primary Result
+For any $O(N^{\alpha})$ sequential matrix multiplication algorithm over an arbitrary ring with $2 < \alpha \le 3$, there is a fully scalable parallel implementation on Distributed Memory Parallel Computers (DMPC). 
 
-## Model Parameters
+That is, for all $1 \le p \le N^{\alpha}/log(N)$, multiplying two $N \times N$ matrices can be performed by a DMPC with p processors in $O(N^{\alpha}/p)$ time, and linear speedup can be achieved in the
+range $[1..N^{\alpha}/log(N)]$. 
 
-## Results
+In particular, multiplying two $N \times N$ matrices can be performed in $O(log(N))$ time by a DMPC with $N^{\alpha}/log(N)$ processors. This matches the performance of PRAM.
 
-## Results (Continued)
+## Distributed Memory Parallel Computers (DMPC)
+<img src="images/dmpc.png" width="600px">
 
-## Multiple GPUs
+## Lemma 1 and Lemma 2
+A processor group (a consecutive group of t processors) holding an $m^l \times m^l$ matrix $X$ can send $X$ to another processor group in one communication step.
 
-## Caveat: Pre-Processing Overhead
+Further, it can be sent to all processor groups in parallel in $log(R) + 1$ communication steps, where R is the number of processor groups. (A broadcast)
+
+## The Recursive Algorithm
+<img src="images/bil.png" width="500px">
+
+## Step D
+<img src="images/stepd.png" width="500px">
+
+## Step C
+<img src="images/stepc.png" width="500px">
 
 ## Conclusion
