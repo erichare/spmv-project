@@ -84,6 +84,8 @@ Note one of the key operations here is multiplying $X^T$ by $y$. In this example
 
 In particular, there is a column in $X$ for every parameter in the parameter vector.
 
+Further, we often have a design matrix that is held constant ($X$) across several iterations of the experiment, but a response vector $y$ that may change frequently as new sets of data are collected and analyzed.
+
 ## R Simulation
 ```{r, eval=FALSE}
 wearables <- read.csv("data/Example_WearableComputing_weight_lifting_exercises_biceps_curl_variations.csv")
