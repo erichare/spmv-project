@@ -6,10 +6,21 @@ output: ioslides_presentation
 ---
 
 ## Outline
+- SpMV Overview
 - Statistics Background
 - Load Balanced Sparse Matrix-Multiplication
 - Architecture-aware Technique
 - Scalable Parallel Matrix Multiplication
+
+## SpMV Overview
+Typically, Matrices are stored with **two-dimensional arrays**.
+
+But, for matrices that are **sparse** (contain a lot of zeroes), this is not ideal:
+- Waste of memory
+- Waste of computation time - Lots of multiplications and additions of zero
+
+## SpMV Methods
+Matrix/vector multiplication is a highly parallelizable task, but if we naively distribute these computations out to processors, we compound the issues of sparsity - Very uneven workload!
 
 ## Statistics Background
 In matrix/vector notation, we can define a typical linear model in statistics as:
@@ -138,7 +149,9 @@ On the other hand, software pipelining enables a communications complexity of $O
 number of processing elements and Q is the number of vectors. Note what happens when $Q >> P$...
 
 ## Highly Skewed Data
-In a matrix that is both highly skewed and highly sparse, splitting rows that have a significantly larger number of non-zero elements is necessary. This incurs a slight overhead and hence is only recommended for more extreme cases.
+- In a matrix that is both highly skewed and highly sparse, splitting rows that have a significantly larger number of non-zero elements is necessary. 
+
+- This incurs a slight overhead and hence is only recommended for more extreme cases.
 
 ## Experimental Results
 Synthetically generated data:
@@ -164,6 +177,7 @@ This is a discrete distribution called the **Zipf Distribution**
 <img src="images/im2.png" width="800px" height="500px">
 
 ## Conclusion
+One of the first distributed advances of this problem - Successful, widely used, but perhaps less relevant than now due to GPU-level improvements.
 
 ## Second Paper
 An architecture-aware technique for optimizing sparse matrix-vector multiplication on GPUs by Maggioni and Berger-Wolf
@@ -196,6 +210,8 @@ Oddly, the speedup doesn't seem too significant. The authors note in their paper
 "*The achieved results seem very reasonable compared with other SpMV optimization techniques. In general, it is not trivial to propose original ideas and it is very unlikely to achieve an impressive speedup from the state-of-the-art. For example, the authors of [8] apply different matrix reordering techniques showing an average speedup ranging from 2.7% to 12.5% from the baseline (with no reordering). Hence, we believe that an average 9% improvement for our cache heuristic is a good result.*"
 
 ## Conclusion
+- Incremental speedup
+- 
 
 ## Scalable Parallel Matrix Multiplication on Distributed Memory Parallel Computers
 
