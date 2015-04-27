@@ -19,8 +19,23 @@ But, for matrices that are **sparse** (contain a lot of zeroes), this is not ide
 - Waste of memory
 - Waste of computation time - Lots of multiplications and additions of zero
 
+```{r, results='asis', echo=FALSE}
+library(xtable)
+
+set.seed(20150427)
+
+print(xtable(matrix(rbinom(40, 1, .05), ncol = 5)), type = "html", comment = FALSE)
+```
+
 ## SpMV Methods
 Matrix/vector multiplication is a highly parallelizable task, but if we naively distribute these computations out to processors, we compound the issues of sparsity - Very uneven workload!
+
+```{r, results='asis', echo=FALSE}
+set.seed(20150427)
+
+print(xtable(matrix(rbinom(40, 1, .05), ncol = 5)), type = "html", comment = FALSE)
+```
+
 
 ## Statistics Background
 In matrix/vector notation, we can define a typical linear model in statistics as:
@@ -182,20 +197,33 @@ One of the first distributed advances of this problem - Successful, widely used,
 ## Second Paper
 An architecture-aware technique for optimizing sparse matrix-vector multiplication on GPUs by Maggioni and Berger-Wolf
 
+## GPU Revolution
+- Large pool of threads
+- Processing units called Streaming Multiprocessors (SMs)
+- Each SM contains computing cores called Streaming Processors (SPs)
+- Example: NVIDIA GTX 580 contains 16 SMs, each with 32 SPs, for a potential total of 512 operations per clock cycle!
+- However, threads within the same warp (group of 32 threads) must execute the same instructions, or there is a performance hit.
+
 ## Sparse Matrix Compression
 <img src="images/im3.png" width="800px">
+
+## Example Cache Request
+<img src="images/Warp.png" width="500px">
+
+## Example Cache Request (Continued)
+<img src="images/Perm.png" width="600px">
 
 ## Cache Transaction Minimization Problem
 Given the following:
 
 - A warp consisting of w threads (or rows)
 - A list of cache line mappings $C_i$, for each thread $t_i$, corresponding to k memory elements
-- A wxk scheduling table S where each row i can be any permutation of the $C_i$.
+- A $w \times k$ scheduling table S where each row i can be any permutation of the $C_i$.
 
-The object is to minimize $z(S) = \sum_{j=0}^{k-1}|\cap_{i=0}^{w-1} S_{i,j}|$.
+The object is to minimize $z(S) = \sum_{j=0}^{k-1}|\cap_{i=0}^{w-1} S_{i,j}|$. This is the **sum of cache line intersections along the vertical direction in the scheduling table S**.
 
 ## Cache Heuristic
-- Greedy approach where the solution is incremenetally constructed from row 0 to row w - 1.
+- Greedy approach where the solution is incrementally constructed from row 0 to row w - 1.
 - Each permutation is selected in an attempt to maximize overlapping with rows already placed.
 - $O(k)$ steps to find overlapping position for a single warp.
 - Total time complexity of $O(k^2n)$
@@ -211,7 +239,8 @@ Oddly, the speedup doesn't seem too significant. The authors note in their paper
 
 ## Conclusion
 - Incremental speedup
-- 
+- A little bit outside the scope of our class
+- Can we find a more distributed algorithm? (Rather than thread level...)
 
 ## Scalable Parallel Matrix Multiplication on Distributed Memory Parallel Computers
 
@@ -222,6 +251,13 @@ That is, for all $1 \le p \le N^{\alpha}/log(N)$, multiplying two $N \times N$ m
 range $[1..N^{\alpha}/log(N)]$. 
 
 In particular, multiplying two $N \times N$ matrices can be performed in $O(log(N))$ time by a DMPC with $N^{\alpha}/log(N)$ processors. This matches the performance of PRAM.
+
+## Distributed Memory Parallel Computers (DMPC)
+- Each processor has local memory (no global shared memory)
+- Communication via message passing
+- Processors take either communication or computation steps
+- A computation step can be "idle"
+- Time complexity of a DMPC is the total number of communication and computation steps.
 
 ## Distributed Memory Parallel Computers (DMPC)
 <img src="images/dmpc.png" width="600px">
@@ -241,3 +277,5 @@ Further, it can be sent to all processor groups in parallel in $log(R) + 1$ comm
 <img src="images/stepc.png" width="500px">
 
 ## Conclusion
+- Speedup linear in the number of processors (optimal)
+- Lots of details and proofs available in paper
