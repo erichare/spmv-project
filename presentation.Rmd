@@ -281,3 +281,6 @@ Further, it can be sent to all processor groups in parallel in $log(R) + 1$ comm
 ## Conclusion
 - Speedup linear in the number of processors (optimal)
 - Lots of details and proofs available in paper
+
+## Thank You
+Any questions?
