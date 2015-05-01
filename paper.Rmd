@@ -35,59 +35,49 @@ We wish to select estimates for $\beta$ that minimize the squared error of this 
 
 $b = (X^TX)^{-1}X^Ty$
 
-Suppose we have the data given in the following table:
+Suppose we have the data given in Table \ref{tbl:cty}:
 ```{r, echo=FALSE, results='asis'}
 library(ggplot2)
 library(xtable)
 
-print(xtable(mpg[1:5,c("cty", "hwy")], digits = 0), comment = FALSE)
+print(xtable(mpg[1:5,c("cty", "hwy")], digits = 0, label = "tbl:cty", caption = "An example of five rows from a dataset containing city and highway miles per gallon."), comment = FALSE)
 ```
 
 We wish to use the highway mpg to predict the city mpg. Note that typically in linear models we also include an intercept term, or a column of 1s in the design matrix $X$. Then we have:
 
-\vspace{1cm}
-
-$y = \begin{bmatrix}
+\begin{align*}
+y &= \begin{bmatrix}
         18 & 21 & 20 & 21 & 16
-     \end{bmatrix}^{T}$
-     
-$X = \begin{bmatrix}
+     \end{bmatrix}^{T} \\ \\
+X &= \begin{bmatrix}
         1 & 29 \\
         1 & 29 \\
         1 & 31 \\
         1 & 30 \\
         1 & 26
-     \end{bmatrix}$
-     
-$\beta = \begin{bmatrix}
+     \end{bmatrix}  \\ \\
+\beta &= \begin{bmatrix}
         \beta_0 \\
         \beta_1
-     \end{bmatrix}$
-     
-$\epsilon = \begin{bmatrix}
+     \end{bmatrix} \\ \\
+\epsilon &= \begin{bmatrix}
         \epsilon_1 & \epsilon_2 & \epsilon_3 & \epsilon_4 & \epsilon_5
-     \end{bmatrix}^{T}$
-     
-$(X^TX)^{-1} = \begin{bmatrix}
+     \end{bmatrix}^{T} \\ \\
+(X^TX)^{-1} &= \begin{bmatrix}
         60.2714 & -2.0714 \\
         -2.0714 & 0.0714 \\
-     \end{bmatrix}$
-     
-$X^Ty = \begin{bmatrix}
+     \end{bmatrix} \\ \\
+X^Ty &= \begin{bmatrix}
         96 \\
         2797 \\
-     \end{bmatrix}$
-     
-$b = (X^TX)^{-1}X^Ty = \begin{bmatrix}
+     \end{bmatrix} \\ \\
+b &= (X^TX)^{-1}X^Ty = \begin{bmatrix}
         -7.7286 \\
         0.9286 \\
-     \end{bmatrix}$
-     
-\vspace{1cm}
+     \end{bmatrix}
+\end{align*}
 
-Hence, the equation for the line of best fit is given by $y = -7.7286 + 0.9286x$.
-
-Note that to derive the least squares estimators of the parameter vector $\beta$, we needed to compute the quantity $X^Ty$. In this simple example, such a computation is trivial. But in a typical setting, there may be thousands of columns of $X$ corresponding to thousands of different parameters in the parameter vector. It is not uncommon that $X$ might be very sparse. For example, in feature selection applications, there may be features corresponding to a couple of observations, when the total size of the dataset is many orders of magnitude larger. The design matrix would contain 0s for each feature not present at a particular observation.
+Hence, the equation for the line of best fit is given by $y = -7.7286 + 0.9286x$. Note that to derive the least squares estimators of the parameter vector $\beta$, we needed to compute the quantity $X^Ty$. In this simple example, such a computation is trivial. But in a typical setting, there may be thousands of columns of $X$ corresponding to thousands of different parameters in the parameter vector. It is not uncommon that $X$ might be very sparse. For example, in feature selection applications, there may be features corresponding to a couple of observations, when the total size of the dataset is many orders of magnitude larger. The design matrix would contain 0s for each feature not present at a particular observation.
 
 To help illustrate the increasing complexity, consider the following block of code, which reads a dataset consisting of fitness data derived from wearable computers. The dataset consists of 4024 observations of 159 variables.
 
@@ -163,7 +153,7 @@ Four different algorithms were compared. The four algorithms are:
 1. **Block** - In this allocation, no attempt at any load balancing is done. Each processor is given a contiguous block of rows for processing. In the paper, this is called the unbalanced case. Although it is balanced in terms of number of rows, it is unbalanced in terms of workload given any sort of sparsity or uneven distribution of non-zero elements.
 2. **Cyclic** - Each row i is allocated to processor i mod P, where P is the number of processors. This is considered by the authors to be an example of naive load balancing, because it rests on the assumption that the distribution of non-zero elements maintains a continuous pattern throughout the matrix.
 3. **Aliaga** - An iterative load balancing algorithm that generates swaps of matrix rows among processors to gradually smooth the maxima and minima of load. This algorithm has a time complexity that depends on the distribution of the data.
-4. **Gala** - The algorithm presented in this paper.
+4. **GALA** - The algorithm presented in this paper.
 
 The speedup as a function of the number of processors is presented in Figure \ref{fig:im2}. The top left box corresponds to the first matrix tested. Note that all but the block algorithm perform well in handling a sparse unsymmetric matrix, assuming that the distribution is not too skewed. The unsymmetric mostly block diagonal matrix has the best speedup as a function of the number of processors for both the Gala and the Aliaga algorithms, likely due to its relative density compared to the other three. The best results for the Gala algorithm come in the scenario of the fourth matrix, in which the Aliaga algorithm asymptotes at about a 12x speedup regardless of whether 20 or 40 processors are used. The Gala algorithm, meanwhile, has about a 22x speedup at 40 processors. This illustrates the success of the algorithm in handling skewness in the data distribution.
 
@@ -199,16 +189,44 @@ The key optimization discussed in this paper surrounds improving the performance
 - A list of cache line mappings $C_i$, for each thread $t_i$, corresponding to k memory elements
 - A wxk scheduling table S where each row i can be any permutation of the $C_i$.
 
-The object is to minimize $z(S) = \sum_{j=0}^{k-1}|\cap_{i=0}^{w-1} S_{i,j}|$. In other words, the goal is to minimize the sum of cache line intersections in the scheduling table S (as these are redundant transactions). In Figure \ref{fig:im4}
+The object is to minimize $z(S) = \sum_{j=0}^{k-1}|\cap_{i=0}^{w-1} S_{i,j}|$. In other words, the goal is to minimize the sum of cache line intersections in the scheduling table S (as these are redundant transactions). In Figure \ref{fig:im5}, the results of the algorithm are given in a table. The authors note that the speedup is not significant, but that novel contributions in this arena have not performed significantly better.
 
 \begin{figure}[H]
-
-\includegraphics[width=\linewidth]{images/im4.png}
+\centering
+\includegraphics[width=0.75\linewidth]{images/im5.png}
 
 \caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
-\label{fig:im4}
+\label{fig:im5}
 \end{figure}
 
-## Third Paper
+## Scalable Parallel Matrix Multiplication
+A more generalized computation is a standard matrix multplication. This generalizes matrix-vector multiplication, and is also used in its own right in statistical computations relating to linear models. In the paper Scalable Parallel Matrix Multiplication on Distributed Memory Parallel Computers, Li presents a framework for scalable matrix multiplication that unifies theores of both sequential and parallel matrix multiplication algorithms. 
+
+The fundmental theorem shown is as follows. For any $O(N^{\alpha})$ sequential matrix multiplication algorithm over an arbitrary ring with $2 < \alpha \le 3$, there is a fully scalable parallel implementation on Distributed Memory Parallel Computers (DMPC). That is, for all $1 \le p \le N^{\alpha}/log(N)$, multiplying two $N \times N$ matrices can be performed by a DMPC with p processors in $O(N^{\alpha}/p)$ time, and linear speedup can be achieved in the range $[1..N^{\alpha}/log(N)]$. In particular, multiplying two $N \times N$ matrices can be performed in $O(log(N))$ time by a DMPC with $N^{\alpha}/log(N)$ processors. The authors note that this matches the performance of parallel random access memory (PRAM).
+
+DMPC has the following characteristics. Each processor has local memory, but there is no global shared memory. All processor communication is done via message passing. In a clock cycle, a processor takes either a communication or a computation step where "idle" is a valid computation step. The time complxity of DMPC, therefore, is the total number of communication and computation steps. Figure \ref{fig:dmpc} illustrates a quick diagram of a DMPC with P processors.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{images/dmpc.png}
+
+\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\label{fig:dmpc}
+\end{figure}
+
+The authors show two lemmas which illustrate the communication capabilities. The first is that a processor group, a set of processors with consecutive indices, can send a matrix to a same sized set of processors in a single step. This of course follows from the one-to-one communications protocol of the DMPC. Lemma 2 follows naturally, which says that all processors can receive this matrix in at most log(R) + 1 steps.
+
+The authors procede by unrolling the **recursive billinear** algorithm for performing the matrix multiplication. This algorithm is shown in Figure \ref{fig:bil}. Essentially, the algorithm performs a divide and conquer approach where the pieces of the matrix are divided recursively, and then combined into the final result. Step D (the divide step) and Step C (the combine step) in particular are highlighted as for how to perform the algorithm in parallel. The basic idea is that the equations given in the paper define a set of processors that need the results of particular computations. Using the communication system, the results are made available to the processors needing them, and each processor in parallel works on its piece of the computation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{images/bil.png}
+
+\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\label{fig:bil}
+\end{figure}
+
+Overall, while dense, this paper provides an example of optimal parallelizability. In $O(log(N))$ time, an $N \times N$ matrix can be multiplied given $N^{\alpha}/log(N)$ where $O(N^{\alpha})$ is the running time of the sequential algorithm (which, in this paper, was the recursive billinear algorithm). 
 
 ## Conclusion
+Ultimately, I felt these three papers presented a broad but interesting overview of parallel and distributed algorithms relevant to my research in Statistics. The GALA procedure yielded solid speedups for SpMV, particularly in the midst of highly sparse and high skewed data distributions. The cache optimization in the second paper yielded a relatively modest improvement. Nonetheless, the sparse matrix storage format presented could be helpful for a wide range of these applications. Lastly, the theoretical results presented in the last paper provided a solid foundation for the possibilities of parallel matrix multiplication across a set of processors. 
