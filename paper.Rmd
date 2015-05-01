@@ -15,7 +15,7 @@ In this paper, I survey work that has been done to optimize the performance of t
 
 1. Load-Balanced Sparse Matrix–Vector Multiplication on Parallel Computers by Nastea, Frieder, and El-Ghazawi
 2. An architecture-aware technique for optimizing sparse matrix-vector multiplication on GPUs by Maggioni and Berger-Wolf
-3. A model-driven blocking strategy for load balanced sparse matrix–vector multiplication on GPUs
+3. Scalable Parallel Matrix Multiplication on Distributed Memory Parallel Computers by Li
 
 This work is relevant to my research in statistics, so I will begin by highlighting a situation in which such calculations are used in a statistical framework, before proceeding to highlight the novel contributions of each paper.
 
@@ -82,7 +82,7 @@ Hence, the equation for the line of best fit is given by $y = -7.7286 + 0.9286x$
 To help illustrate the increasing complexity, consider the following block of code, which reads a dataset consisting of fitness data derived from wearable computers. The dataset consists of 4024 observations of 159 variables.
 
 ```{r, warning=FALSE}
-wearables <- read.csv("data/Example_WearableComputing_weight_lifting_exercises_biceps_curl_variations.csv")
+wearables <- read.csv("data/Example_WearableComputing.csv")
 X <- apply(wearables[,-1], 2, as.numeric)
 y <- as.numeric(wearables[,1])
 
@@ -133,18 +133,18 @@ The full pseudo-code of the algorithm is reproduced in Figure \ref{fig:alg1}.
 
 \includegraphics[width=\linewidth]{images/alg1.png}
 
-\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\caption{Pseudo-code for the greedy algorithm of the first paper. The algorithm performs operations on a major node (a leader). The leader uses the GALA routine to assign the most dense remaining rows to the processors with the minimum current workload.}
 \label{fig:alg1}
 \end{figure}
 
 ### Results
-The performance improvements were evaluated using four different matrices of slightly different characteristics, and performing the simulation on an Intel Paragon supercomputer. Figure \ref{fig:im1} gives a table describing the different properties of the test matrices. Note the sparsity value is given as the proportion of non-zero elements. Hence, all of the matrices test are quite sparse, containing at most 5.55 non-zero elements.
+The performance improvements were evaluated using four different matrices of slightly different characteristics, and performing the simulation on an Intel Paragon supercomputer. Figure \ref{fig:im1} gives a table describing the different properties of the test matrices. Note the sparsity value is given as the proportion of non-zero elements. Hence, all of the matrices test are quite sparse, containing at most 5.55% non-zero elements.
 
 \begin{figure}[H]
 
 \includegraphics[width=\linewidth]{images/im1.png}
 
-\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\caption{Matrices used for the evaluation of the algorithm. In particular, note that the last matrix is a synthetically generated matrix from a Zipf distribution. This distribution simulates sparsity and skewness characteristics that GALA is most effective at handling.}
 \label{fig:im1}
 \end{figure}
 
@@ -161,7 +161,7 @@ The speedup as a function of the number of processors is presented in Figure \re
 
 \includegraphics[width=\linewidth]{images/im2.png}
 
-\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\caption{Graph of the speedup of the algorithm as a function of the number of processors. Note that GALA performs most strongly on the bottom right panel, which is the panel corresponding to the synthetically generated data.}
 \label{fig:im2}
 \end{figure}
 
@@ -179,7 +179,7 @@ The first optimization discussed is a compression format for sparse matrices. In
 
 \includegraphics[width=\linewidth]{images/im3.png}
 
-\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\caption{Sliced ELL compression format for sparse matrices presented in this paper. In particular, since there is a local value for the number of columns (k) for each warp, the sliced ELL format allows smaller matrices to be divided up to each warp locally.}
 \label{fig:im3}
 \end{figure}
 
@@ -189,13 +189,13 @@ The key optimization discussed in this paper surrounds improving the performance
 - A list of cache line mappings $C_i$, for each thread $t_i$, corresponding to k memory elements
 - A wxk scheduling table S where each row i can be any permutation of the $C_i$.
 
-The object is to minimize $z(S) = \sum_{j=0}^{k-1}|\cap_{i=0}^{w-1} S_{i,j}|$. In other words, the goal is to minimize the sum of cache line intersections in the scheduling table S (as these are redundant transactions). In Figure \ref{fig:im5}, the results of the algorithm are given in a table. The authors note that the speedup is not significant, but that novel contributions in this arena have not performed significantly better.
+The object is to minimize $z(S) = \sum_{j=0}^{k-1}|\cap_{i=0}^{w-1} S_{i,j}|$. In other words, the goal is to minimize the sum of cache line intersections in the scheduling table S (as these are redundant transactions). The algorithm presented does so by greedily choosing a row which maximizes the amount of overlap with rows that have already been placed, which in turn will minimize the number of cache transactions. The time complexity amoritized is approximately $O(n)$ for this algorithm (technically, it is $O(k^2n)$, but because the sliced ELL format allows k to be significantly smaller in sparse matrices than n, this is approximated well by $O(n)$). In Figure \ref{fig:im5}, the results of the algorithm are given in a table. The authors note that the speedup is not significant, but that novel contributions in this arena have not performed significantly better.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.75\linewidth]{images/im5.png}
 
-\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\caption{Table listing the reduction in the number of cache transactions for several different benchmarks. Overall, a 1.09x speedup is noted by using this algorithm.}
 \label{fig:im5}
 \end{figure}
 
@@ -210,7 +210,7 @@ DMPC has the following characteristics. Each processor has local memory, but the
 \centering
 \includegraphics[width=0.5\linewidth]{images/dmpc.png}
 
-\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\caption{A diagram of Distributed Memory Parallel Computers (DMPC). Note that this structure allows for one-to-one processor communication.}
 \label{fig:dmpc}
 \end{figure}
 
@@ -222,7 +222,7 @@ The authors procede by unrolling the **recursive billinear** algorithm for perfo
 \centering
 \includegraphics[width=0.5\linewidth]{images/bil.png}
 
-\caption{Overview of expected coverage for $k$-peptide libraries of different sizes $N$ with the different encoding schemes (NNN, NNB, NNK/S, and trimer). An additional line for maximum possible coverage is shown.}
+\caption{The recursive billinear algorithm for matrix multiplication. The algorithm presented in the paper unrolls this algorithm into a parallel iterative algorithm.}
 \label{fig:bil}
 \end{figure}
 
