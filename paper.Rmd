@@ -3,6 +3,7 @@ title: "Distributed Algorithms for Sparse Matrix-Vector Multiplication"
 author: "Eric Hare"
 date: "April 28, 2015"
 output: pdf_document
+bibliography: references.bib
 header-includes:
     - \usepackage{float}
     - \usepackage{graphicx}
@@ -13,9 +14,9 @@ Sparse Matrix-Vector Multiplication (SpMV) is a widely used and widely explored 
 
 In this paper, I survey work that has been done to optimize the performance of these calculations. I've selected three papers which detail distributed algorithms. The three papers are:
 
-1. Load-Balanced Sparse Matrix–Vector Multiplication on Parallel Computers by Nastea, Frieder, and El-Ghazawi
-2. An architecture-aware technique for optimizing sparse matrix-vector multiplication on GPUs by Maggioni and Berger-Wolf
-3. Scalable Parallel Matrix Multiplication on Distributed Memory Parallel Computers by Li
+1. Load-Balanced Sparse Matrix–Vector Multiplication on Parallel Computers by Nastea, Frieder, and El-Ghazawi [@m1]
+2. An architecture-aware technique for optimizing sparse matrix-vector multiplication on GPUs by Maggioni and Berger-Wolf [@m2]
+3. Scalable Parallel Matrix Multiplication on Distributed Memory Parallel Computers by Li [@m3]
 
 This work is relevant to my research in statistics, so I will begin by highlighting a situation in which such calculations are used in a statistical framework, before proceeding to highlight the novel contributions of each paper.
 
@@ -82,18 +83,18 @@ Hence, the equation for the line of best fit is given by $y = -7.7286 + 0.9286x$
 To help illustrate the increasing complexity, consider the following block of code, which reads a dataset consisting of fitness data derived from wearable computers. The dataset consists of 4024 observations of 159 variables.
 
 ```{r, warning=FALSE}
-wearables <- read.csv("data/Example_WearableComputing.csv")
+wearables <- read.table("data/Example_WearableComputing.csv", sep = ";", header = TRUE)
 X <- apply(wearables[,-1], 2, as.numeric)
 y <- as.numeric(wearables[,1])
 
 system.time(t(X) %*% y)
 ```
 
-But now note what occurs when the number of observations is a replicated to be 50 times larger.
+But now note what occurs when the number of observations is a replicated to be 500 times larger.
 
 ```{r, warning=FALSE}
-biggerX <- do.call("rbind", replicate(50, X, simplify = FALSE))
-biggery <- rep(y, times = 50)
+biggerX <- do.call("rbind", replicate(500, X, simplify = FALSE))
+biggery <- rep(y, times = 500)
 
 system.time(t(biggerX) %*% biggery)
 ```
@@ -173,7 +174,7 @@ matrix-vector multiplication on GPUs by Maggioni and Berger-Wolf. In this paper,
 
 To understand the improvements, its important to note the fundamental improvements brought to the issue by the architecture of modern GPUs. A GPU is composed of several Streaming Multiprocessors (SMs), each one containing CUDA cores. In the Nvidia GTX 580, for example, there are a total of 512 cores, allowing for an optimal 512 operations per clock cycle. Each of these cores is connected to a random access memory through a cache hierarchy with two levels. Taking into account the number of threads that can theoretically be ran by a single core, GPUs offer the potential for a massive speedup through significant parallelism. But, for many of the reasons previously mentioned, these gains are not often realized when performing linear algebra tasks involving sparse matrices.
 
-The first optimization discussed is a compression format for sparse matrices. In ELL compression, an nxm matrix is stored in an nxk data structure, where k is the maximum number of non-zero entries in any particular row. There is a separate nxk data structure storing the column index of the particular non-zero entry. Figure \ref{fig:img3} illustrates an example of using sliced ELL compression to store a sparse matrix. Sliced ELL compression is similar to regular ELL compression, except that the matrix is partitioned into different slices where there is a local value of k for each slice. This has the effect of reducing the amount of zero-padding needed in order to align the nonzero entries in the matrix.
+The first optimization discussed is a compression format for sparse matrices. In ELL compression, an nxm matrix is stored in an nxk data structure, where k is the maximum number of non-zero entries in any particular row. There is a separate nxk data structure storing the column index of the particular non-zero entry. Figure \ref{fig:im3} illustrates an example of using sliced ELL compression to store a sparse matrix. Sliced ELL compression is similar to regular ELL compression, except that the matrix is partitioned into different slices where there is a local value of k for each slice. This has the effect of reducing the amount of zero-padding needed in order to align the nonzero entries in the matrix.
 
 \begin{figure}[H]
 
@@ -230,3 +231,5 @@ Overall, while dense, this paper provides an example of optimal parallelizabilit
 
 ## Conclusion
 Ultimately, I felt these three papers presented a broad but interesting overview of parallel and distributed algorithms relevant to my research in Statistics. The GALA procedure yielded solid speedups for SpMV, particularly in the midst of highly sparse and high skewed data distributions. The cache optimization in the second paper yielded a relatively modest improvement. Nonetheless, the sparse matrix storage format presented could be helpful for a wide range of these applications. Lastly, the theoretical results presented in the last paper provided a solid foundation for the possibilities of parallel matrix multiplication across a set of processors. 
+
+## References
